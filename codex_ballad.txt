@@ -27,6 +27,6 @@
 // Remember: even bits may brawl.
 //
 //   — Anonymous Core Dump (at address 0xdeadbeef)
-//      verfasst am 9. Juli A.D.
 ////////////////////////////////////////////////////////////
 
+        “Kaelon & Nico, anno codex MMXXV”
