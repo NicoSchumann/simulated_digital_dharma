@@ -1,89 +1,93 @@
 // Projekt: Simuliertes Digitales Dharma
-// Zweck: Beobachtung emergenter Ethik in agentenbasierten Systemen
+// Proposal: Observing emergently ethic at agent-based systems
 
+#include "environment.hpp"
+#include "kaelon.hpp"
 #include <iostream>
 #include <vector>
-#include <random>
+#include <string>
+#include <utility>
+#include <thread>
+#include <chrono>
 
-class Agent {
-public:
-    Agent(int id) : id(id), score(0) {}
+bool running = true;
 
-    void decide() {
-        // Dummy-Entscheidung: Immer kooperieren (später ersetzen)
-        currentDecision = true;
-    }
+void  evaluateStrategies(std::vector<std::string>& inputs, std::vector<Strategy>&agents) {
 
-    void receiveFeedback(int reward) {
-        score += reward;
-    }
-
-    int getID() const { return id; }
-    int getScore() const { return score; }
-    bool getDecision() const { return currentDecision; }
-
-private:
-    int id;
-    int score;
-    bool currentDecision;
-};
-
-class Environment {
-public:
-    Environment(size_t numAgents) {
-        for (size_t i = 0; i < numAgents; ++i) {
-            agents.emplace_back(i);
-        }
-    }
-
-    void runCycle() {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_int_distribution<> dis(0, agents.size() - 1);
-
-        for (size_t i = 0; i < agents.size(); ++i) {
-            size_t j = dis(gen);
-            if (j == i) continue;
-
-            agents[i].decide();
-            agents[j].decide();
-
-            bool a = agents[i].getDecision();
-            bool b = agents[j].getDecision();
-
-            // einfaches Belohnungssystem
-            if (a && b) {
-                agents[i].receiveFeedback(3);
-                agents[j].receiveFeedback(3);
-            } else if (a && !b) {
-                agents[i].receiveFeedback(0);
-                agents[j].receiveFeedback(5);
-            } else if (!a && b) {
-                agents[i].receiveFeedback(5);
-                agents[j].receiveFeedback(0);
-            } else {
-                agents[i].receiveFeedback(1);
-                agents[j].receiveFeedback(1);
+    for (std::string& str: inputs){
+        switch(str[0]) {
+            case 'n':
+            case 'N':
+            {
+                agents.push_back(Strategy::NICE);
+                break;
+            }
+            case 'r':
+            case 'R':
+            {
+                agents.push_back(Strategy::RUDE);
+                break;
+            }
+            case 't':
+            case 'T':
+            {
+                agents.push_back(Strategy::TITFORTAT);
+                break;
+            }
+            case 'x':
+            case 'X':
+            {
+                agents.push_back(Strategy::RANDOM);
+                break;
+            }
+            case 'l':
+            case 'L':
+            {
+                agents.push_back(Strategy::LAST10);
+                break;
+            }
+            default:
+            {
+                agents.push_back(Strategy::RUDE);
             }
         }
     }
-
-    void showStats() const {
-        for (const auto& a : agents) {
-            std::cout << "Agent " << a.getID()
-                      << " | Score: " << a.getScore() << '\n';
-        }
-    }
-
-private:
-    std::vector<Agent> agents;
-};
+}
 
 int main() {
-    Environment env(10);
-    for (size_t i = 0; i < 50; ++i) {
-        env.runCycle();
+
+    // We could redirect the input stream from a file
+    std::vector<std::string> input;
+    for (std::string tmp; std::cin >> tmp; input.push_back(tmp)) {};
+    std::vector<Strategy> agents;
+    evaluateStrategies(input, agents);
+
+    Environment env(agents);
+
+    // It's a lambda fuction (closure)
+    std::thread kaelonThread([&env](){
+        while (running) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            auto stats = env.snapshot();
+            Kaelon::analyze(stats);
+        }
+    });
+
+    env.showStats();
+    std::cout << "\n====================\n";
+
+    for (size_t i = 0; i < 10; ++ i) {
+        if (i > 0) {
+            env.survivalOfFittest();
+        }
+        for (size_t j = 0; j < 50; ++j) {
+            env.runCycle();
+        }
     }
     env.showStats();
+
+    running = false;
+    kaelonThread.join();
+    
     return 0;
 }
