@@ -3,13 +3,17 @@
 #include "agent.hpp"
 #include <vector>
 
+enum class Strategy { NICE, TITFORTAT, RUDE, RANDOM, LAST10 };
+
 class Environment {
 public:
-    Environment(size_t numAgents);
+    Environment(std::vector<Strategy>&);
     void runCycle();
-    void showStats() const;
+    void showStats();
+    void survivalOfFittest();
 
 private:
+    int maxID;
     std::vector<Agent> _agents;
     void simulateInteraction(Agent& a, Agent& b);
 };
